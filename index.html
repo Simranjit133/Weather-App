@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+</head>
+<style>
+    body {
+        text-align: center;
+        margin: 20px;
+        font-family: 'Courier New', Courier, monospace;
+    }
+
+    #weather-info,
+    #forecast {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid black;
+        display: none;
+
+    }
+
+    .forecast-item {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px;
+        border: 2px solid black;
+    }
+</style>
+<body>
+    <h1>Weather App</h1>
+    <input type="text" name="" id="city-input" placeholder="Enter city name">
+    <button onclick="getWeatherByCity()">Get Weather</button>
+
+    <div id="weather-info">
+        <h2 id="city-name"></h2>
+        <p id="temperature"></p>
+        <p id="description"></p>
+        <p id="wind-speed"></p>
+        <img src="" id="weather-icon">
+    </div>
+
+    <h2>5 day Forecast</h2>
+    
+    <div id="forecast"></div>
+
+    <script>
+        const apiKey = "1e79f39f7cf04135ada172047250102";
+
+        function getLocationAndWeather() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    console.log(latitude, longitude);
+                    // function call jo latitude and longitude lega
+                    fetchWeather(latitude, longitude);
+                })
+            }
+            else {
+                alert("Geolocation is not supported by your browser")
+            }
+        }
+        async function fetchWeather(lat, long) {
+            const weatherUrl = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${long}&days=5&aqi=no&alerts=no`; 
+
+            try {
+                const response = await fetch(weatherUrl);
+                const data = await response.json();
+                console.log(data);
+                displayWeather(data);
+                if (data.error) {
+                    alert("unable to fetch data at this moment", data.error.message);
+                    return;
+                }
+            }
+            catch {
+                console.error(error);
+                alert("unable to fetch data at this moment");
+            }
+        }
+
+        async function getWeatherByCity() {
+            const city = document.getElementById("city-input").value;
+            if(!city){
+                alert("please Enter a valid city name");
+                return;
+            }
+            const weatherUrl = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=5&aqi=no&alerts=no`; 
+            try {
+                const response = await fetch(weatherUrl);
+                const data = await response.json();
+                console.log(data);
+                displayWeather(data);
+                if (data.error) {
+                    alert("unable to fetch data at this moment", data.error.message);
+                    return;
+                }
+            }
+            catch(error) {
+                console.error(error);
+                alert("unable to fetch data at this moment");
+            }
+
+        }
+        function displayWeather(data){
+            document.getElementById("city-name").innerText = `Weather in ${data.location.name}, ${data.location.country}`;
+            document.getElementById("temperature").innerText = ` Temperature : ${data.current.temp_c}℃`;
+            document.getElementById("description").innerText = `Condition : ${data.current.condition.text}`;
+            document.getElementById("wind-speed").innerText = `Wind Speed : ${data.current.wind_kph} Km/h`;
+            document.getElementById("weather-icon").src = data.current.condition.icon;
+            document.getElementById("weather-info").style.display="block";
+
+            displayForecast(data.forecast.forecastday);
+        }
+
+        function displayForecast(data){
+            const forecastContainer = document.getElementById("forecast");
+            forecastContainer.innerHTML = "";
+            
+            data.forEach(element =>{
+                const forcastItem = document.createElement("div");
+                forcastItem.className = "forecast-item";
+
+                forcastItem.innerHTML = `
+                    <h3>${element.date}</h3>
+                    <p>${element.day.avgtemp_c}℃</p>
+                    <p>${element.day.condition.text}</p>
+                    <img src="${element.day.condition.icon}" alt="${element.day.condition.text}">
+
+                    
+                `;
+                forecastContainer.appendChild(forcastItem);
+                
+            })
+            forecastContainer.style.display = "block";
+        }
+
+        window.onload = getLocationAndWeather;
+    </script>
+
+</body>
+</html>
